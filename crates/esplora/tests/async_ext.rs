@@ -24,6 +24,8 @@ impl TestEnv {
             bitcoind::exe_path().expect("Cannot find bitcoind daemon, set BITCOIND_EXEC environment variable with the path to bitcoind");
         let mut bitcoind_conf = bitcoind::Conf::default();
         bitcoind_conf.p2p = bitcoind::P2P::Yes;
+        bitcoind_conf.args.push("-rpcworkqueue=1024");
+        bitcoind_conf.args.push("-rpcthreads=64");
         let bitcoind = BitcoinD::with_conf(bitcoind_exe, &bitcoind_conf)?;
 
         let mut electrs_conf = Conf::default();

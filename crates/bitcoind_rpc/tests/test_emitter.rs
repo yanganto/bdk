@@ -27,7 +27,13 @@ struct TestEnv {
 impl TestEnv {
     fn new() -> anyhow::Result<Self> {
         let daemon = match std::env::var_os("BITCOIND_EXEC") {
-            Some(bitcoind_path) => bitcoind::BitcoinD::new(bitcoind_path),
+            Some(bitcoind_path) => {
+            let mut bitcoind_conf = bitcoind::Conf::default();
+            bitcoind_conf.p2p = bitcoind::P2P::Yes;
+            bitcoind_conf.args.push("-rpcworkqueue=1024");
+            bitcoind_conf.args.push("-rpcthreads=64");
+            bitcoind::BitcoinD::with_conf(bitcoind_path, &bitcoind_conf)
+            },
             None => panic!("Cannot find bitcoind daemon, set BITCOIND_EXEC environment variable with the path to bitcoind"),
         }?;
         let client = bitcoincore_rpc::Client::new(
