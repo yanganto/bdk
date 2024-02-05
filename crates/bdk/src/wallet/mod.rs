@@ -552,6 +552,55 @@ impl<D> Wallet<D> {
         })
     }
 
+    /// Initialize an empty [`Wallet`] with a custom chain hash and block id.
+    ///
+    /// This is like [`Wallet::new`] with an additional `genesis_hash` and `block_id` parameters. This is useful
+    /// for syncing from alternative networks in the middle
+    pub fn new_with_block_id<E: IntoWalletDescriptor>(
+        descriptor: E,
+        change_descriptor: Option<E>,
+        mut db: D,
+        network: Network,
+        genesis_hash: BlockHash,
+        block_id: BlockId,
+    ) -> Result<Self, NewError<D::WriteError>>
+    where
+        D: PersistBackend<ChangeSet>,
+    {
+        if let Ok(changeset) = db.load_from_persistence() {
+            if changeset.is_some() {
+                return Err(NewError::NonEmptyDatabase);
+            }
+        }
+        let secp = Secp256k1::new();
+        let (chain, chain_changeset) = LocalChain::from_block_id(genesis_hash, block_id);
+        let mut index = KeychainTxOutIndex::<KeychainKind>::default();
+
+        let (signers, change_signers) =
+            create_signers(&mut index, &secp, descriptor, change_descriptor, network)
+                .map_err(NewError::Descriptor)?;
+
+        let indexed_graph = IndexedTxGraph::new(index);
+
+        let mut persist = Persist::new(db);
+        persist.stage(ChangeSet {
+            chain: chain_changeset,
+            indexed_tx_graph: indexed_graph.initial_changeset(),
+            network: Some(network),
+        });
+        persist.commit().map_err(NewError::Write)?;
+
+        Ok(Wallet {
+            signers,
+            change_signers,
+            network,
+            chain,
+            indexed_graph,
+            persist,
+            secp,
+        })
+    }
+
     /// Load [`Wallet`] from the given persistence backend.
     pub fn load<E: IntoWalletDescriptor>(
         descriptor: E,

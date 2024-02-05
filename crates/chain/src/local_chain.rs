@@ -206,11 +206,21 @@ pub struct Update {
 pub struct LocalChain {
     tip: CheckPoint,
     index: BTreeMap<u32, BlockHash>,
+    birthday: u32,
 }
 
 impl PartialEq for LocalChain {
     fn eq(&self, other: &Self) -> bool {
-        self.index == other.index
+        // Only compare the overlayed lifetime
+        if self.birthday > other.birthday {
+            self.index.get(&0) == other.index.get(&0)
+                && self.index == other.index.clone().split_off(&self.birthday)
+        } else if self.birthday < other.birthday {
+            self.index.get(&0) == other.index.get(&0)
+                && self.index.clone().split_off(&other.birthday) == other.index
+        } else {
+            self.index == other.index
+        }
     }
 }
 
@@ -253,11 +263,25 @@ impl LocalChain {
         self.index.get(&0).copied().expect("must have genesis hash")
     }
 
+    /// Construct [`LocalChain`] from specific `height` and `hash`.
+    /// The genesis_hash still is needed for chain hash.
+    #[must_use]
+    pub fn from_block_id(genesis_hash: BlockHash, block_id: BlockId) -> (Self, ChangeSet) {
+        let chain = Self {
+            birthday: block_id.height,
+            tip: CheckPoint::new(block_id),
+            index: BTreeMap::from([(0, genesis_hash), (block_id.height, block_id.hash)]),
+        };
+        let changeset = chain.initial_changeset();
+        (chain, changeset)
+    }
+
     /// Construct [`LocalChain`] from genesis `hash`.
     #[must_use]
     pub fn from_genesis_hash(hash: BlockHash) -> (Self, ChangeSet) {
         let height = 0;
         let chain = Self {
+            birthday: height,
             tip: CheckPoint::new(BlockId { height, hash }),
             index: core::iter::once((height, hash)).collect(),
         };
@@ -285,6 +309,7 @@ impl LocalChain {
     /// Construct a [`LocalChain`] from a given `checkpoint` tip.
     pub fn from_tip(tip: CheckPoint) -> Result<Self, MissingGenesisError> {
         let mut chain = Self {
+            birthday: 0,
             tip,
             index: BTreeMap::new(),
         };
@@ -322,6 +347,7 @@ impl LocalChain {
         }
 
         let chain = Self {
+            birthday: 0,
             index: blocks,
             tip: tip.expect("already checked to have genesis"),
         };
