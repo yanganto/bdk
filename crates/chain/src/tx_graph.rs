@@ -449,6 +449,32 @@ impl<A> TxGraph<A> {
     pub fn is_empty(&self) -> bool {
         self.txs.is_empty()
     }
+
+    /// Map TxGraph for another anchor type
+    pub fn map_anchors<A2: Ord, F>(self, f: F) -> TxGraph<A2>
+    where
+        F: Fn(A) -> A2,
+    {
+        TxGraph::<A2> {
+            txs: HashMap::from_iter(self.txs.into_iter().map(
+                |(txid, (tx_node_interal, set, amt))| {
+                    (
+                        txid,
+                        (
+                            tx_node_interal.clone(),
+                            BTreeSet::from_iter(set.into_iter().map(&f)),
+                            amt,
+                        ),
+                    )
+                },
+            )),
+            anchors: BTreeSet::<(A2, Txid)>::from_iter(
+                self.anchors.into_iter().map(|(a, txid)| (f(a), txid)),
+            ),
+            spends: self.spends,
+            empty_outspends: self.empty_outspends,
+        }
+    }
 }
 
 impl<A: Clone + Ord> TxGraph<A> {
