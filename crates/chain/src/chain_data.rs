@@ -3,24 +3,22 @@ use bitcoin::{hashes::Hash, BlockHash, OutPoint, TxOut, Txid};
 use crate::{Anchor, AnchorFromBlockPosition, COINBASE_MATURITY};
 
 /// Represents the observed position of some chain data.
-///
-/// The generic `A` should be a [`Anchor`] implementation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, core::hash::Hash)]
-pub enum ChainPosition<A> {
+pub enum ChainPosition<A: Anchor> {
     /// The chain data is seen as confirmed, and in anchored by `A`.
     Confirmed(A),
     /// The chain data is seen in mempool at this given timestamp.
     Unconfirmed(u64),
 }
 
-impl<A> ChainPosition<A> {
+impl<A: Anchor> ChainPosition<A> {
     /// Returns whether [`ChainPosition`] is confirmed or not.
     pub fn is_confirmed(&self) -> bool {
         matches!(self, Self::Confirmed(_))
     }
 }
 
-impl<A: Clone> ChainPosition<&A> {
+impl<A: Clone + Anchor> ChainPosition<&A> {
     /// Maps a [`ChainPosition<&A>`] into a [`ChainPosition<A>`] by cloning the contents.
     pub fn cloned(self) -> ChainPosition<A> {
         match self {
@@ -228,7 +226,7 @@ impl AnchorFromBlockPosition for ConfirmationTimeHeightAnchor {
 
 /// A `TxOut` with as much data as we can retrieve about it
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct FullTxOut<A> {
+pub struct FullTxOut<A: Anchor> {
     /// The location of the `TxOut`.
     pub outpoint: OutPoint,
     /// The `TxOut`.

@@ -152,7 +152,7 @@ impl Default for TxNodeInternal {
 
 /// A transaction that is included in the chain, or is still in mempool.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct CanonicalTx<'a, T, A> {
+pub struct CanonicalTx<'a, T, A: Anchor> {
     /// How the transaction is observed as (confirmed or unconfirmed).
     pub chain_position: ChainPosition<&'a A>,
     /// The transaction node (as part of the graph).
