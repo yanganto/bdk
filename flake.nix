@@ -9,12 +9,6 @@
     # find instructions here:
     # <https://lazamar.co.uk/nix-versions>
 
-    # bitcoind pinned to 0.25.1
-    nixpkgs-bitcoind.url = "github:nixos/nixpkgs?rev=53793ca0aecf67164c630ca34dbfde552a8ab085";
-    # TODO: pin to 0.26.0 once it stops to fail in darwin
-    # pinned to 0.26.0
-    # nixpkgs-bitcoind.url = "github:nixos/nixpkgs?rev=f5375ec98618347da6b036a5e06381ab7380db03";
-
     # Blockstream's esplora
     # inspired by fedimint CI
     nixpkgs-kitman.url = "github:jkitman/nixpkgs?rev=61ccef8bc0a010a21ccdeb10a92220a47d8149ac";
@@ -32,7 +26,7 @@
     pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
   };
 
-  outputs = { self, nixpkgs, nixpkgs-bitcoind, nixpkgs-kitman, rust-overlay, flake-utils, pre-commit-hooks, ... }:
+  outputs = { self, nixpkgs, nixpkgs-kitman, rust-overlay, flake-utils, pre-commit-hooks, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         overlays = [ (import rust-overlay) ];
@@ -50,9 +44,9 @@
         pkgs = import nixpkgs {
           inherit system overlays;
         };
-        pkgs-bitcoind = import nixpkgs-bitcoind {
-          inherit system overlays;
-        };
+
+        pkgs-bitcoind = pkgs.callPackage ./nix/packages/bitcoind.nix { };
+
         pkgs-kitman = import nixpkgs-kitman {
           inherit system;
         };
@@ -83,7 +77,7 @@
 
         # Common inputs
         envVars = {
-          BITCOIND_EXEC = "${pkgs-bitcoind.bitcoind}/bin/bitcoind";
+          BITCOIND_EXEC = "${pkgs-bitcoind}/bin/bitcoind";
           ELECTRS_EXEC = "${pkgs-kitman.esplora}/bin/esplora";
           CC = "${stdenv.cc.nativePrefix}cc";
           AR = "${stdenv.cc.nativePrefix}ar";
@@ -93,7 +87,7 @@
         };
         buildInputs = [
           # Add additional build inputs here
-          pkgs-bitcoind.bitcoind
+          pkgs-bitcoind
           pkgs-kitman.esplora
           pkgs.openssl
           pkgs.openssl.dev
@@ -128,6 +122,9 @@
         '';
       in
       {
+        packages = {
+          bitcoind = pkgs-bitcoind;
+        };
         checks = {
           # Pre-commit checks
           pre-commit-check =

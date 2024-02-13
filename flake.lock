@@ -89,22 +89,6 @@
         "type": "github"
       }
     },
-    "nixpkgs-bitcoind": {
-      "locked": {
-        "lastModified": 1697710513,
-        "narHash": "sha256-m5wY3DJsi6wsKdcy4k0wZwLUTNvwKIbmPAsM9SC7w5s=",
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "53793ca0aecf67164c630ca34dbfde552a8ab085",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "53793ca0aecf67164c630ca34dbfde552a8ab085",
-        "type": "github"
-      }
-    },
     "nixpkgs-kitman": {
       "locked": {
         "lastModified": 1677533122,
@@ -179,7 +163,6 @@
       "inputs": {
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs",
-        "nixpkgs-bitcoind": "nixpkgs-bitcoind",
         "nixpkgs-kitman": "nixpkgs-kitman",
         "pre-commit-hooks": "pre-commit-hooks",
         "rust-overlay": "rust-overlay"
