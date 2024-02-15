@@ -5,14 +5,6 @@
     # stable nixpkgs (let's not YOLO on unstable)
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
 
-    # pin dependencies to a specific version
-    # find instructions here:
-    # <https://lazamar.co.uk/nix-versions>
-
-    # Blockstream's esplora
-    # inspired by fedimint CI
-    nixpkgs-kitman.url = "github:jkitman/nixpkgs?rev=61ccef8bc0a010a21ccdeb10a92220a47d8149ac";
-
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs = {
@@ -26,7 +18,7 @@
     pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
   };
 
-  outputs = { self, nixpkgs, nixpkgs-kitman, rust-overlay, flake-utils, pre-commit-hooks, ... }:
+  outputs = { self, nixpkgs, rust-overlay, flake-utils, pre-commit-hooks, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         overlays = [ (import rust-overlay) ];
@@ -47,8 +39,8 @@
 
         pkgs-bitcoind = pkgs.callPackage ./nix/packages/bitcoind.nix { };
 
-        pkgs-kitman = import nixpkgs-kitman {
-          inherit system;
+        pkgs-esplora = pkgs.callPackage ./nix/packages/esplora/derivation.nix {
+          inherit (pkgs.darwin.apple_sdk.frameworks) Security;
         };
 
         # Signed Commits
@@ -78,7 +70,7 @@
         # Common inputs
         envVars = {
           BITCOIND_EXEC = "${pkgs-bitcoind}/bin/bitcoind";
-          ELECTRS_EXEC = "${pkgs-kitman.esplora}/bin/esplora";
+          ELECTRS_EXEC = "${pkgs-esplora}/bin/esplora";
           CC = "${stdenv.cc.nativePrefix}cc";
           AR = "${stdenv.cc.nativePrefix}ar";
           CC_wasm32_unknown_unknown = "${pkgs.llvmPackages_14.clang-unwrapped}/bin/clang-14";
@@ -88,7 +80,7 @@
         buildInputs = [
           # Add additional build inputs here
           pkgs-bitcoind
-          pkgs-kitman.esplora
+          pkgs-esplora
           pkgs.openssl
           pkgs.openssl.dev
           pkgs.pkg-config
@@ -124,6 +116,7 @@
       {
         packages = {
           bitcoind = pkgs-bitcoind;
+          esplora = pkgs-esplora;
         };
         checks = {
           # Pre-commit checks
