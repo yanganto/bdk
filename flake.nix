@@ -103,15 +103,6 @@
         ] ++ lib.optionals isDarwin [
           # Additional darwin specific native inputs can be set here
         ];
-
-        # Cargo update
-        cargoUpdate = ''
-          cargo update
-        '';
-        # MSRV compat tweaks
-        msrvTweaks = ''
-          cargo update -p home --precise "0.5.5"
-        '';
       in
       {
         packages = {
@@ -171,29 +162,26 @@
             _shellHook = (self.checks.${system}.pre-commit-check.shellHook or "");
           in
           {
-            default = pkgs.mkShell ({
-              shellHook = "${_shellHook}";
-              buildInputs = buildInputs ++ WASMInputs ++ [ stable ];
-              inherit nativeBuildInputs;
-            } // envVars // {
-              shellHook = "${cargoUpdate} ${_shellHook}";
-            });
+            default = msrv;
 
             msrv = pkgs.mkShell ({
               shellHook = "${_shellHook}";
               buildInputs = buildInputs ++ WASMInputs ++ [ msrv ];
               inherit nativeBuildInputs;
-            } // envVars // {
-              shellHook = "${msrvTweaks} ${_shellHook}";
-            });
+            } // envVars);
+
+            stable = pkgs.mkShell ({
+              shellHook = "${_shellHook}";
+              buildInputs = buildInputs ++ WASMInputs ++ [ stable ];
+              inherit nativeBuildInputs;
+            } // envVars);
+
 
             nightly = pkgs.mkShell ({
               shellHook = "${_shellHook}";
               buildInputs = buildInputs ++ [ nightly ];
               inherit nativeBuildInputs;
-            } // envVars // {
-              shellHook = "${cargoUpdate} ${_shellHook}";
-            });
+            } // envVars);
 
             coverage = pkgs.mkShell ({
               shellHook = "${_shellHook}";
@@ -202,9 +190,7 @@
               RUSTFLAGS = "-Cinstrument-coverage";
               RUSTDOCFLAGS = "-Cinstrument-coverage";
               LLVM_PROFILE_FILE = "./target/coverage/%p-%m.profraw";
-            } // envVars // {
-              shellHook = "${cargoUpdate} ${_shellHook}";
-            });
+            } // envVars);
           };
       }
     );
