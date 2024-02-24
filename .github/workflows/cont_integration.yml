@@ -26,7 +26,7 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
       - name: Pre-commit checks
-        run: nix develop -L . --command pre-commit run --all-files
+        run: nix develop -L .#msrv --command pre-commit run --all-files
 
   build-test:
     name: Build, test, check Rust
@@ -34,8 +34,8 @@ jobs:
     strategy:
       matrix:
         rust:
-          - "" # empty means default
           - msrv
+          - stable
         features:
           - --no-default-features
           - --all-features
@@ -59,8 +59,8 @@ jobs:
     strategy:
       matrix:
         rust:
-          - "" # empty means default
           - msrv
+          - stable
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -84,8 +84,8 @@ jobs:
     strategy:
       matrix:
         rust:
-          - "" # empty means default
           - msrv
+          - stable
         target:
           - wasm32-unknown-unknown
     steps:
