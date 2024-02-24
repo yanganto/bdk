@@ -1,6 +1,5 @@
 # Added by Cargo
 /target
-Cargo.lock
 
 # Dev environment
 /.vscode
